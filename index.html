@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>CodeMirror: RISC-V Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" href="https://unpkg.com/awsm.css@3.0.7/dist/awsm_theme_black.min.css">
+    <style>
+    .CodeMirror { margin: auto; }
+    .text-center { text-align: center; }
+    .mb-8 { margin-bottom: 2rem; }
+    .my-4 { margin-top: 1rem; margin-bottom: 1rem; }
+    .mx-auto { margin-left: auto; margin-right: auto; }
+    </style>
+    <script type="module" crossorigin src="/codemirror-riscv/assets/index.8028226c.js"></script>
+    <link rel="stylesheet" href="/codemirror-riscv/assets/index.5091cb16.css">
+  </head>
+
+  <body class="dark">
+    <header class="text-center mb-8">
+      <img class="my-4 mx-auto" src="/codemirror-riscv/assets/riscv.cac492d7.svg" alt="RISC-V" width="64" height="64">
+      <h1>RISC-V mode for CodeMirror</h1>
+      <p><code>text/x-riscv</code></p>
+      <p><a href="https://github.com/codewars/codemirror-riscv">codewars/codemirror-riscv</a></p>
+    </header>
+
+    <main>
+      <textarea id="editor">
+# comment
+.globl multiply
+multiply:
+  mulw a0, a0, a1
+  ret
+</textarea>
+    </main>
+
+    <footer style="margin-top: 1rem;">
+    </footer>
+
+    
+  </body>
+</html>
