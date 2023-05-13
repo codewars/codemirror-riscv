@@ -1,3 +1,13 @@
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../../lib/codemirror"), require("../../addon/mode/simple"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../../lib/codemirror", "../../addon/mode/simple"], mod);
+  else // Plain browser env
+    mod(CodeMirror);
+})(function(CodeMirror) {
+"use strict";
+
 // prettier-ignore
 const directives = [
   // Architecture independent directives.
@@ -122,11 +132,9 @@ const extC = instructions([
   "c.slli", "c.srai", "c.srli", "c.sub", "c.subw", "c.sw", "c.swsp", "c.xor",
 ]);
 
-export const defineMode = (CodeMirror) => {
+
   CodeMirror.defineSimpleMode("riscv", {
-    meta: {
-      lineComment: "#",
-    },
+
     start: [
       { regex: /#.*/, token: "comment" },
 
@@ -157,7 +165,10 @@ export const defineMode = (CodeMirror) => {
       { regex: registers, token: "variable" },
       { regex: registerAbiNames, token: "variable-2" },
     ],
+    meta: {
+      lineComment: "#",
+    }
   });
 
   CodeMirror.defineMIME("text/x-riscv", "riscv");
-};
+});
