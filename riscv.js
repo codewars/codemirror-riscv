@@ -1,3 +1,13 @@
+(function(mod) {
+  if (typeof exports == "object" && typeof module == "object") // CommonJS
+    mod(require("../../lib/codemirror"), require("../../addon/mode/simple"));
+  else if (typeof define == "function" && define.amd) // AMD
+    define(["../../lib/codemirror", "../../addon/mode/simple"], mod);
+  else // Plain browser env
+    mod(CodeMirror);
+})(function(CodeMirror) {
+"use strict";
+
 // prettier-ignore
 const directives = [
   // Architecture independent directives.
@@ -5,7 +15,7 @@ const directives = [
   "abort", "align", "altmacro", "ascii", "asciz",
   "balign", "balignw", "balignl",
   "bundle_align_mode", "bundle_lock", "bundle_unlock",
-  "byte", "cfi_startproc", "comm",
+  "byte", "cfi_endproc", "cfi_startproc", "cfi_undefined", "comm",
   "data", "def", "desc", "dim", "double",
   "eject", "else", "elseif", "end", "endef", "endfunc", "endif",
   "equ", "equiv", "eqv", "err",
@@ -30,9 +40,9 @@ const directives = [
 ];
 const directivesPattern = new RegExp("\\.(?:" + directives.join("|") + ")");
 
-const registers = /x(?:[0-9]|[1-2][0-9]|31)|pc/;
+const registers = /\b(?:x(?:[0-9]|[1-2][0-9]|30|31)|pc)\b/;
 const registerAbiNames =
-  /zero|ra|[fsgt]p|t[0-6]|f?s(?:[0-9]|1[01])|f?a[0-7]|ft(?:[0-9]|1[01])/;
+  /\b(?:zero|ra|[fsgt]p|t[0-6]|f?s(?:[0-9]|1[01])|f?a[0-7]|ft(?:[0-9]|1[01]))\b/;
 
 // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md#assembler-relocation-functions
 // prettier-ignore
@@ -42,7 +52,7 @@ const relocationFunctions = [
   "tls_ie_pcrel_hi", "tls_gd_pcrel_hi", "got_pcrel_hi",
 ];
 const relocationFunctionPatterns = new RegExp(
-  "%(?:" + relocationFunctions.join("|") + ")\\([^)]+\\)"
+  "%(?:" + relocationFunctions.join("|") + ")(?=\\((?:[^)]+)\\))"
 );
 
 const instructions = (xs) =>
@@ -55,6 +65,7 @@ const pseudos = instructions([
   "j", "jr", "la", "lla", "lga", "li",
   "beqz", "bnez", "bgez", "blez", "bgtz", "bltz",
   "bgt", "bgtu", "ble", "bleu",
+  "csrr", "csrw",
   "seqz", "snez", "sgtz", "sltz",
   "call", "tail", "fence",
   "mv", "neg", "negw", "not", "nop", "ret",
@@ -67,7 +78,7 @@ const pseudos = instructions([
 const baseI = instructions([
   // RV32I/RV64I
   "add", "addi", "and", "andi", "auipc", "beq", "bge", "bgeu", "blt", "bltu", "bne",
-  "csrrc", "csrrci", "csrrs", "csrrsi", "csrrw", "csrrwi", "ebreak", "ecall", "fence",
+  "csrrc", "csrrci", "csrrs", "csrrsi", "csrrw", "csrrwi", "csrwi", "ebreak", "ecall", "fence",
   "fence.i", "jal", "jalr", "lb", "lbu", "lh", "lhu", "lui", "lw", "mret", "or", "ori",
   "sb", "sfence.vma", "sh", "sll", "slli", "slt", "slti", "sltiu", "sltu", "sra", "srai",
   "sret", "srl", "srli", "sub", "sw", "uret", "wfi", "xor", "xori",
@@ -122,22 +133,21 @@ const extC = instructions([
   "c.slli", "c.srai", "c.srli", "c.sub", "c.subw", "c.sw", "c.swsp", "c.xor",
 ]);
 
-export const defineMode = (CodeMirror) => {
+
   CodeMirror.defineSimpleMode("riscv", {
-    meta: {
-      lineComment: "#",
-    },
+
     start: [
       { regex: /#.*/, token: "comment" },
+      { regex: /\/\*.*\*\//, token: "comment" },
 
       // Labels
-      { regex: /\w+:/, token: "tag" },
-      { regex: /[1-9]\d*:/, token: "tag" },
+      { regex: /\b(?:\w+:)/, token: "tag" },
+      { regex: /\b(?:[1-9]\d*:)/, token: "tag" },
       // Reference to local label
-      { regex: /[1-9]\d*[bf]/, token: "variable-2" },
+      { regex: /\b(?:[1-9]\d*[bf])\b/, token: "variable-2" },
 
       // Integer literal
-      { regex: /-?(?:0|[1-9]\d*|0x[0-9A-Fa-f]+)\b/, token: "number" },
+      { regex: /\b(?:-|(?<![a-zA-Z0-9_]))(?:0|[1-9]\d*|0x[0-9A-Fa-f]+)\b/, token: "variable-2" },
       // String literal
       { regex: /"(?:[^\\]|\\.)*?(?:"|$)/, token: "string" },
 
@@ -155,9 +165,12 @@ export const defineMode = (CodeMirror) => {
 
       // Registers
       { regex: registers, token: "variable" },
-      { regex: registerAbiNames, token: "variable-2" },
+      { regex: registerAbiNames, token: "variable" },
     ],
+    meta: {
+      lineComment: "#",
+    }
   });
 
   CodeMirror.defineMIME("text/x-riscv", "riscv");
-};
+});
